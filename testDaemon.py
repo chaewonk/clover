@@ -1,6 +1,4 @@
-# -*- coding: utf8 -*-
 
-# socket 과 select 모듈 임포트
 from socket import *
 from select import *
 import sys
@@ -14,77 +12,113 @@ ADDR = (HOST, PORT)
 BUFSIZE = 1024
 
 FORMAT = pyaudio.paInt16
-CHANNELS = 2
+CHANNELS = 1
 RATE = 44100
 
+def doOperation(data, addr):
+    """
+    operation table
 
-# TCP socket
-serverSocket = socket(AF_INET, SOCK_STREAM)
+    START : client send audio stream to server and send "END" to notice final chunk(buffer)
+    NEW_CLASS : client sen audio stream to server for request about new audio class label
 
-# binding
-serverSocket.bind(ADDR)
+    """
+    if (data == 'START') | (data == 'START\n'):
 
-# listen, roomsize = 10
-serverSocket.listen(10)
-connection_list = [serverSocket]
-
-print('==============================================')
-print('START SIX SENSE SERVER... port: %s' % str(PORT))
-print('==============================================')
-
-# 무한 루프를 시작
-while connection_list:
-    try:
-        print('[INFO] waiting request...')
-
-        # select 로 요청을 받고, 10초마다 블럭킹을 해제하도록 함
-        read_socket, write_socket, error_socket = select(connection_list, [], [], 10)
-
-        for sock in read_socket:
-            # 새로운 접속
-            if sock == serverSocket:
-                clientSocket, addr_info = serverSocket.accept()
-                connection_list.append(clientSocket)
-                print('[INFO][%s] new client(%s) is connected to server...' % (ctime(), addr_info[0]))
-
-
-
-            # 접속한 사용자(클라이언트)로부터 새로운 데이터 받음
+        frames = []
+        print "start..."
+        while (True):
+            data = sock.recv(BUFSIZE)
+            print data
+            if (data == "END") | (data == "END\n"):
+                break
             else:
-                data = sock.recv(BUFSIZE)
-                print('[INFO][%s] receive data from client - %s' % (ctime(), addr_info[0],))
-                print data
-                if data == "START":
-                    frames = []
-                    print "start..."
+                frames.append(data)
 
-                    while(True):
-                        data = sock.recv(BUFSIZE)
-                        if data == "END":
-                            break
-                        else:
-                            frames.append(data)
+        wave_output_filename = ("%s" % (addr,))
+        MakeAudioFileFromList(frames, wave_output_filename)
 
-                    #end appending
-                    print ("making wave file form audio stream")
-                    WAVE_OUTPUT_FILENAME = ("%s" % (addr_info[0],))
-                    wf = wave.open(WAVE_OUTPUT_FILENAME + ".wav", 'wb')
+    elif (data == "NEW_CLASS") | (data == "NEW_CLASS\n"):
 
-                    wf.setnchannels(CHANNELS)
-                    wf.setsampwidth(p.get_sample_size(FORMAT))
-                    wf.setframerate(RATE)
-                    wf.writeframes(b''.join(frames))
-                    wf.close()
+        frames = []
+        print "start..."
+        while (True):
+            data = sock.recv(BUFSIZE)
+            if (data == "END") | (data == "END\n"):
+                break
+            else:
+                frames.append(data)
 
-                    # clear all the frames
-                    del frames[:]
+        newClassLabel = sock.recv(BUFSIZE)
+        wave_output_filename = ("userRequestLabelDir/%s" % (newClassLabel,))
+        MakeAudioFileFromList(frames, wave_output_filename)
 
+    #elif data == "BUG_REPORT" | data == "BUG_REPORT\n":
+
+
+
+    # exception case: close the connection
+    else:
+        connection_list.remove(sock)
+        sock.close()
+        print('[INFO][%s] connection closed from client - %s' % ctime(), addr_info[0])
+
+
+def MakeAudioFileFromList(list, filename):
+
+    p = pyaudio.PyAudio()
+
+    print ("making wave file form audio stream")
+
+    wf = wave.open(filename + ".wav", 'wb')
+    wf.setnchannels(CHANNELS)
+    wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setframerate(RATE)
+    wf.writeframes(b''.join(list))
+    wf.close()
+
+    p.terminate()
+
+if __name__ == "__main__":
+
+    # TCP socket
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    # binding
+    serverSocket.bind(ADDR)
+    # listen, room size = 10
+    serverSocket.listen(10)
+    connection_list = [serverSocket]
+
+    print('==============================================')
+    print('START SIX SENSE SERVER... port: %s' % str(PORT))
+    print('==============================================')
+
+
+    while connection_list:
+        try:
+            print('[INFO] waiting request...')
+
+            # selection method,
+            read_socket, write_socket, error_socket = select(connection_list, [], [], 10)
+
+            for sock in read_socket:
+                # new connection
+                if sock == serverSocket:
+                    clientSocket, addr_info = serverSocket.accept()
+                    connection_list.append(clientSocket)
+                    print('[INFO][%s] new client(%s) is connected to server...' % (ctime(), addr_info[0]))
+
+
+                # receive data form client
                 else:
-                    connection_list.remove(sock)
-                    sock.close()
-                    print('[INFO][%s] connection closed from client - %s' % ctime(), addr_info[0])
+                    data = sock.recv(BUFSIZE)
+                    print('[INFO][%s] receive data from client - %s' % (ctime(), addr_info[0],))
+                    print data
 
-    except KeyboardInterrupt:
-        # 부드럽게 종료하기
-        serverSocket.close()
-        sys.exit()
+                    doOperation(data, addr_info[0])
+
+        except KeyboardInterrupt:
+            # good way to terminate
+            serverSocket.close()
+            sys.exit()
+

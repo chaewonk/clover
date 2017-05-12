@@ -6,6 +6,7 @@ from select import *
 import sys
 import pyaudio
 import wave
+<<<<<<< HEAD
 from time import ctime
 
 HOST = ''
@@ -88,3 +89,65 @@ while connection_list:
         # 부드럽게 종료하기
         serverSocket.close()
         sys.exit()
+=======
+import socket
+from threading import Thread
+
+
+def audioStream():
+    
+    FORMAT = pyaudio.paInt16
+    CHUNK = 3584 # or BUFFUR
+    CHANNELS = 2
+    RATE = 44100
+
+    frames = []
+
+    p = pyaudio.PyAudio()
+    """stream = p.open(format=FORMAT,
+                    channels=CHANNELS,
+                    rate=RATE,
+                    output=True,
+                    frames_per_buffer=CHUNK, )
+    """
+
+    while True:
+ 
+        udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udp.bind(('',8001))
+
+        data, addr = udp.recvfrom(CHUNK*CHANNELS*2)
+
+
+
+        if data != "END":
+            frames.append(data)
+        
+        elif data == "END":
+
+            WAVE_OUTPUT_FILENAME = ("%s" % (addr,))
+            wf= wave.open(WAVE_OUTPUT_FILENAME+".wav", 'wb')
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(p.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))
+            wf.close()
+
+            frames = ['0']*len(frames)
+
+
+
+        else:
+            print "unkwon data"
+        
+        udp.close()
+    p.terminate()
+
+if __name__ == "__main__":
+
+    T_audioStream = Thread(target = audioStream,)
+    T_audioStream.setDaemon(True)
+    T_audioStream.start()
+    T_audioStream.join()
+
+>>>>>>> cef0a351fcc2f5feedb1887754c970bb0dbe7f13

@@ -9,7 +9,7 @@ from time import ctime
 
 # 호스트, 포트와 버퍼 사이즈를 지정
 HOST = ''
-PORT = 56789
+PORT = 8001
 BUFSIZE = 1024
 ADDR = (HOST, PORT)
 
