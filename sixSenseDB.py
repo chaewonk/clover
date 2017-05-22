@@ -8,4 +8,4 @@ def addUser(name, id, email):
     conn_user.commit()
     conn_user.close()
 
-addUser("alice", 987654321, "alicenaver.com")
+

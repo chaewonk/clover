@@ -1,21 +1,29 @@
+# -*- coding:utf-8 -*-
 
-from socket import *
-from select import *
-import sys
-import pyaudio
+
 import wave
+from select import *
+from socket import *
 from time import ctime
+
+import pyaudio
+
+#User-Define libraries
+
+
 
 HOST = ''
 PORT = 8001
 ADDR = (HOST, PORT)
 BUFSIZE = 1024
+BUFSIZE2 = 4096
+
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 
-def doOperation(data, addr):
+def doOperation(data, addr, sock):
     """
     operation table
 
@@ -25,18 +33,72 @@ def doOperation(data, addr):
     """
     if (data == 'START') | (data == 'START\n'):
 
-        frames = []
-        print "start..."
-        while (True):
-            data = sock.recv(BUFSIZE)
-            print data
-            if (data == "END") | (data == "END\n"):
-                break
-            else:
-                frames.append(data)
-
         wave_output_filename = ("%s" % (addr,))
-        MakeAudioFileFromList(frames, wave_output_filename)
+        f=open(wave_output_filename+'.wav', 'wb')
+
+        print "start..."
+
+        data = sock.recv(BUFSIZE2)
+        total_file_size = int(data.split('\n')[0])
+        print "totial file size: %s" %(total_file_size,)
+
+
+        data = data.split('\n')[1:]
+        data = ''.join(data)
+        f.write(data)
+
+        remain_size = total_file_size
+        while(remain_size>BUFSIZE2):
+
+            data = sock.recv(BUFSIZE2)
+            remain_size = remain_size - len(data)
+            print len(data)
+            f.write(data)
+
+        data = sock.recv(BUFSIZE2)
+        remain_size = remain_size - len(data)
+        print len(data)
+        f.write(data)
+
+
+        # extract audio label by using deep learning
+        sock.send('ACK: ANDROID')
+        print 'ACK: ANDROID'
+
+        f.close()
+        #os.remove(wave_output_filename+"*")
+
+    #elif (data == "TIZEN") | (data == "TIZEN\n"):
+    elif 'TIZEN' in data:
+        wave_output_filename = ("%s" % (addr,))
+        f=open(wave_output_filename+'.wav', 'wb')
+
+        print ("start form tizen...")
+
+        #data = sock.recv(BUFSIZE)
+        total_file_size = sock.recv(50)
+        total_file_size = int(file_size.split('/')[0])
+        print "totial file size: %s" %(total_file_size,)
+
+        remain_size = total_file_size
+        while(remain_size>BUFSIZE):
+
+            data = sock.recv(BUFSIZE)
+            remain_size = remain_size - len(data)
+            print len(data)
+            f.write(data)
+
+        data = sock.recv(BUFSIZE)
+        remain_size = remain_size - len(data)
+        print len(data)
+        f.write(data)
+
+        # extract audio label by using deep learning
+        sock.send('ACK: TIZEN')
+        print 'ACK: TIZEN'
+
+        f.close()
+        #os.remove(wave_output_filename+"*")
 
     elif (data == "NEW_CLASS") | (data == "NEW_CLASS\n"):
 
@@ -45,6 +107,7 @@ def doOperation(data, addr):
         while (True):
             data = sock.recv(BUFSIZE)
             if (data == "END") | (data == "END\n"):
+                print 'END'
                 break
             else:
                 frames.append(data)
@@ -53,15 +116,17 @@ def doOperation(data, addr):
         wave_output_filename = ("userRequestLabelDir/%s" % (newClassLabel,))
         MakeAudioFileFromList(frames, wave_output_filename)
 
+
+    #elif (data == "ADD_USER") | (data == "ADD_USER\n"):
     #elif data == "BUG_REPORT" | data == "BUG_REPORT\n":
 
+    elif len(data) == 0:
+	print('[INFO][%s] socket is closed frome the client -%s' % (ctime(), addr_info[0]))
 
 
-    # exception case: close the connection
     else:
-        connection_list.remove(sock)
-        sock.close()
-        print('[INFO][%s] connection closed from client - %s' % ctime(), addr_info[0])
+        print('[INFO][%s] unknown data from client - %s' % (ctime(), addr_info[0]))
+        print data
 
 
 def MakeAudioFileFromList(list, filename):
@@ -112,13 +177,20 @@ if __name__ == "__main__":
                 # receive data form client
                 else:
                     data = sock.recv(BUFSIZE)
-                    print('[INFO][%s] receive data from client - %s' % (ctime(), addr_info[0],))
-                    print data
+                    if data:
+                        print('[INFO][%s] receive data from client - %s' % (ctime(), addr_info[0],))
+			print data
 
-                    doOperation(data, addr_info[0])
+                        doOperation(data, addr_info[0], sock)
+
+                        connection_list.remove(sock)
+                        sock.close()
+                    else:
+                        print('[INFO][%s] receive null data from client - %s' % (ctime(), addr_info[0],))
+                        connection_list.remove(sock)
+                        sock.close()
 
         except KeyboardInterrupt:
             # good way to terminate
             serverSocket.close()
             sys.exit()
-

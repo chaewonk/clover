@@ -43,6 +43,7 @@ while connection_list:
 
                 # 클라이언트로 응답을 돌려줌
                 for socket_in_list in connection_list:
+
                     if socket_in_list != serverSocket and socket_in_list != sock:
                         try:
                             socket_in_list.send('[%s] 새로운 방문자가 대화방에 들어왔습니다. 반가워요~ 짝짝짝!' % ctime())
@@ -54,6 +55,8 @@ while connection_list:
                 data = sock.recv(BUFSIZE)
                 if data:
                     print('[INFO][%s] 클라이언트로부터 데이터를 전달 받았습니다.' % ctime())
+                    sock.send('[%s] %s' % (ctime(), data))
+
                     for socket_in_list in connection_list:
                         if socket_in_list != serverSocket and socket_in_list != sock:
                             try:
