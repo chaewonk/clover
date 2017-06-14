@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document>
+	<mscreen>
+		<configuration device="CIRCLE_360x360" id="config1"
+			name="common" orientation="portrait" type="common" />
+	</mscreen>
+	<views startup="view1">
+		<view id="view1" indicator="true" type="view">
+			<grid align_h="fill" vsize_w="1000" align_v="fill" visible="true"
+				weight_v="1" id="grid1" weight_h="1" vsize_h="1000">
+				<bg align_v="fill" visible="true" color="#ffffff" src=""
+					weight_v="1" pack_h="1004" weight_h="1" align_h="fill" pack_w="1003"
+					pack_x="0" pack_y="0" id="bg1" option="scale"></bg>
+				<button align_v="fill" visible="true" weight_v="1" pack_h="361"
+					weight_h="1" align_h="fill" pack_w="303" disable="false" pack_x="354"
+					pack_y="702" style="bottom" id="button1" text="START">
+					<event connection_wrapper="connection_view1_button1_onclicked"
+						function_name="view1_button1_onclicked" signal="clicked" target="view2" />
+				</button>
+				<image resizable_up="true" resizable_down="true" align_v="fill"
+					visible="true" src="start.png" weight_v="1" pack_h="305" weight_h="1"
+					align_h="fill" aspect_fixed="true" pack_w="303" pack_x="353"
+					pack_y="267" no_scale="false" id="image1" fill_outside="true"></image>
+			</grid>
+		</view>
+		<view indicator="true" id="view2" type="view">
+			<grid align_h="fill" vsize_w="1000" align_v="fill" visible="true"
+				weight_v="1" id="grid2" weight_h="1" vsize_h="1000">
+				<bg align_v="fill" visible="true" color="#ffffff" src=""
+					weight_v="1" pack_h="1003" weight_h="1" align_h="fill" pack_w="1005"
+					pack_x="0" pack_y="0" id="bg2" option="scale"></bg>
+				<button align_v="fill" visible="true" weight_v="1" pack_h="361"
+					weight_h="1" align_h="fill" pack_w="270" disable="false" pack_x="371"
+					pack_y="700" style="bottom" id="button2" text="STOP">
+					<event connection_wrapper="connection_view2_button2_onclicked"
+						function_name="view2_button2_onclicked" signal="clicked" target="view1" />
+				</button>
+				<image resizable_up="true" resizable_down="true" align_v="fill"
+					visible="true" src="detecting.png" weight_v="1" pack_h="569"
+					weight_h="1" align_h="fill" aspect_fixed="true" pack_w="604"
+					pack_x="201" pack_y="134" no_scale="false" id="image2"
+					fill_outside="false"></image>
+			</grid>
+		</view>
+	</views>
+</document>
