@@ -7,9 +7,26 @@ from socket import *
 from time import ctime
 
 import pyaudio
+from pyfcm import FCMNotification
+
+
+push_service = FCMNotification(api_key="AAAAkXdjqxM:APA91bHgGK9xOi7tTf0ch6tOoxU30hNevDohrkNcyUhLuiHqNgifO4jDDYUSgrVCS_h5VB9JUV1ffxRFa5x-4pshglFyoO2wFtTfT2yfA5UkDIP5iyFfwN1_Jf4fyhQsVd4Kr7_TUZGM")
+
+
+registration_id ="e76bV14MH3c:APA91bH8ypElx8UqSMwmy5hENsBMmHgEZcxRR0LwDdvuEPWkYrlOWKZ7se_yBdPgJCBTBcmTciGvwWtdBWWQPEDI_vbm3Cnzn-FeW5B4lwnPGWAbJiPlhw11zAgmt1tNUQFndWWIaf03"
+
+data_message = {
+        "Nick" : "Mario",
+        "body" : "great match!",
+        "Room" : "PortugalVSDenmark"
+        }
+
+
+message_title = "title"
+message_body = "body"
 
 #User-Define libraries
-
+from S2 import *
 
 
 HOST = ''
@@ -17,7 +34,6 @@ PORT = 8001
 ADDR = (HOST, PORT)
 BUFSIZE = 1024
 BUFSIZE2 = 4096
-
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -59,11 +75,26 @@ def doOperation(data, addr, sock):
         remain_size = remain_size - len(data)
         print len(data)
         f.write(data)
+        
+        if wave_output_filename != "":
+            cf = s2(wave_output_filename+".wav")
+            
+            message_body = cf
 
+            push_service.notify_single_device(registration_id=registration_id,
+                    message_body=message_body,
+                    data_message=data_message)      
 
+            
+            
+            
+            sock.send(cf)
+            print cf
+        else:
+            sock.send('err')
         # extract audio label by using deep learning
-        sock.send('ACK: ANDROID')
-        print 'ACK: ANDROID'
+        #sock.send('ACK: ANDROID')
+        #print 'ACK: ANDROID'
 
         f.close()
         #os.remove(wave_output_filename+"*")
@@ -77,7 +108,7 @@ def doOperation(data, addr, sock):
 
         #data = sock.recv(BUFSIZE)
         total_file_size = sock.recv(50)
-        total_file_size = int(file_size.split('/')[0])
+        total_file_size = int(total_file_size.split('/')[0])
         print "totial file size: %s" %(total_file_size,)
 
         remain_size = total_file_size
@@ -94,8 +125,12 @@ def doOperation(data, addr, sock):
         f.write(data)
 
         # extract audio label by using deep learning
-        sock.send('ACK: TIZEN')
-        print 'ACK: TIZEN'
+        if wave_output_filename != "":
+            cf = s2(wave_output_filename+".wav")
+            sock.send(cf)
+            print cf
+        else:
+            sock.send('err')
 
         f.close()
         #os.remove(wave_output_filename+"*")
@@ -162,6 +197,9 @@ if __name__ == "__main__":
     while connection_list:
         try:
             print('[INFO] waiting request...')
+            
+            #print s2("dog.wav")
+
 
             # selection method,
             read_socket, write_socket, error_socket = select(connection_list, [], [], 10)
